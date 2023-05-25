@@ -23,12 +23,19 @@ function parse(file: string, path: string) {
           if (jsonSechma.$ref) {
             const sem = map.get(refName(jsonSechma.$ref));
             if (sem) {
-              // 引用的 sechma 不会有ref,且一定是个对象, 为
+              // 引用的 sechma 不会有ref,且一定是个对象
               newSechma.properties = sem;
             } else {
+              const data = json.components.schemas[refName(jsonSechma.$ref)];
+              generateSechmaIntoMap(data, refName(jsonSechma.$ref));
+              newSechma.properties = map.get(refName(jsonSechma.$ref));
             }
+          } else if(jsonSechma.properties) {
+              // 没有引用,此时一定是  [key: string]: Sechma;
+              
           }
         }
+
         map.set(sechmaName, newSechma);
       }
     });
