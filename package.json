@@ -1,5 +1,14 @@
 {
+  "scripts": {
+    "build": "yarn tsc",
+    "dev": "yarn tsc -w"
+  },
   "dependencies": {
+    "@apidevtools/json-schema-ref-parser": "^10.1.0",
+    "node-fetch": "^3.3.1",
     "typescript": "^5.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.2.3"
   }
 }
