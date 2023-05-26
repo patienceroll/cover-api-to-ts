@@ -4,21 +4,22 @@ import ts from "typescript";
 
 const map = new Map<string, Sechma>();
 
-const sourceFile = ts.createSourceFile(
-  path.resolve(__dirname, "./template.d.ts"),
-  "",
-  {
-    languageVersion: 99,
-  },
-  true
-);
-
-ts.createAbstractBuilder
+// const sourceFile = ts.createSourceFile(
+//   path.resolve(__dirname, "./template.d.ts"),
+//   "",
+//   {
+//     languageVersion: 99,
+//   },
+//   true
+// );
+// console.log(sourceFile);
+const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
 
 function parse(file: string, path: string) {
   fs.readFile(file).then((res) => {
     const json: OpenApi = JSON.parse(res.toString("utf-8"));
 
+    // 生成对象数据
     Object.keys(json.components.schemas).forEach((key) => {
       const JsonSechma = json.components.schemas[key];
       // 先判断此 sechma 是否因为被其他 sechma 引用已经生成了
@@ -89,6 +90,16 @@ function parse(file: string, path: string) {
     });
 
     const pathData = json.paths[path];
+    Object.values(pathData).forEach((data) => {
+      const sechmaName = refName(
+        data.responses[200].content["*/*"].schema.$ref
+      );
+      const sechma = map.get(sechmaName) as Sechma;
+      const comment = ts.factory.createJSDocComment(sechma.description);
+      const token = ts.factory.createToken(ts.SyntaxKind.TypeKeyword)
+      console.log(printer.printNode(ts.EmitHint.Unspecified, token));
+    });
+
     debugger;
   });
 }

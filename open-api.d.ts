@@ -25,6 +25,7 @@ type OpenApi = {
   };
 };
 
+
 type PathInstance = {
   tags: string[];
   summary: string;
