@@ -43,7 +43,13 @@ type PathInstance = {
   >;
 };
 
-type DataType = "object" | "integer" | "array" | "string";
+type DataType =
+  | "object"
+  | "integer"
+  | "array"
+  | "string"
+  | "number"
+  | "boolean";
 
 type Sechma = {
   title?: string;
@@ -53,5 +59,6 @@ type Sechma = {
   required?: string[];
   /** 有ref就说明是一个对象,且没有properties */
   $ref?: string;
+  items?: Sechma;
   [key: string]: Sechma;
 };

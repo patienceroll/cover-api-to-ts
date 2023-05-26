@@ -1,7 +1,19 @@
 import fs from "fs/promises";
 import path from "path";
+import ts from "typescript";
 
 const map = new Map<string, Sechma>();
+
+const sourceFile = ts.createSourceFile(
+  path.resolve(__dirname, "./template.d.ts"),
+  "",
+  {
+    languageVersion: 99,
+  },
+  true
+);
+
+ts.createAbstractBuilder
 
 function parse(file: string, path: string) {
   fs.readFile(file).then((res) => {
@@ -14,31 +26,70 @@ function parse(file: string, path: string) {
       if (mapSechma) return;
 
       function generateSechmaIntoMap(jsonSechma: Sechma, sechmaName: string) {
-        const newSechma: Sechma = {};
+        let newSechma: Sechma = {};
         newSechma.title = jsonSechma.title;
         newSechma.type = jsonSechma.type;
         newSechma.description = jsonSechma.description;
         newSechma.required = jsonSechma.required;
+
         function generateProperty() {
           if (jsonSechma.$ref) {
             const sem = map.get(refName(jsonSechma.$ref));
             if (sem) {
               // 引用的 sechma 不会有ref,且一定是个对象
-              newSechma.properties = sem;
+              newSechma = sem;
             } else {
               const data = json.components.schemas[refName(jsonSechma.$ref)];
               generateSechmaIntoMap(data, refName(jsonSechma.$ref));
-              newSechma.properties = map.get(refName(jsonSechma.$ref));
+              newSechma = map.get(refName(jsonSechma.$ref)) as Sechma;
             }
-          } else if(jsonSechma.properties) {
-              // 没有引用,此时一定是  [key: string]: Sechma;
-              
+          } else if (jsonSechma.properties) {
+            // 没有引用,此时一定是  [key: string]: Sechma;
+            let newProperties: Sechma = {};
+            newProperties.title = jsonSechma.title;
+            newProperties.type = jsonSechma.type;
+            newProperties.description = jsonSechma.description;
+            newProperties.required = jsonSechma.required;
+            Object.keys(jsonSechma.properties).forEach((l) => {
+              newProperties[l] = {};
+              const s = (jsonSechma.properties as Sechma)[l];
+              if (s.$ref) {
+                const name = refName(s.$ref);
+                const m = map.get(name);
+                if (m) {
+                  newProperties[l] = m;
+                } else {
+                  const data = json.components.schemas[name];
+                  generateSechmaIntoMap(data, name);
+                  newProperties[l] = map.get(name) as Sechma;
+                }
+              } else {
+                if (s.type === "array" && s.items?.$ref) {
+                  const name = refName(s.items.$ref);
+                  const m = map.get(name);
+                  if (m) {
+                    newProperties[l].properties = m;
+                  } else {
+                    generateSechmaIntoMap(json.components.schemas[name], name);
+                    newProperties.properties = map.get(name);
+                  }
+                } else {
+                  newProperties[l] = s;
+                }
+              }
+            });
+            newSechma.properties = newProperties;
           }
         }
-
+        generateProperty();
         map.set(sechmaName, newSechma);
       }
+
+      generateSechmaIntoMap(JsonSechma, key);
     });
+
+    const pathData = json.paths[path];
+    debugger;
   });
 }
 
